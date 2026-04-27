@@ -79,6 +79,8 @@ function handleCallback() {
     const refresh = params.get('refresh_token');
     if (access && refresh) {
         saveTokens(access, refresh);
-        window.location.href = '/dashboard.html';
+        // Clean URL then redirect to dashboard
+        window.history.replaceState({}, document.title, window.location.pathname);
+        window.location.href = 'dashboard.html';
     }
 }

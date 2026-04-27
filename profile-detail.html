@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insighta Labs — Profile Detail</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav>
+        <span class="brand">🔍 Insighta Labs</span>
+        <div>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="profiles.html">Profiles</a>
+            <a href="search.html">Search</a>
+            <a href="account.html">Account</a>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </nav>
+    <div class="container">
+        <a href="profiles.html" style="color:#4fc3f7;text-decoration:none">← Back to Profiles</a>
+        <div class="card" style="margin-top:1.5rem" id="profile-card">
+            <div class="loading">Loading...</div>
+        </div>
+    </div>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        async function loadProfile() {
+            const token = await requireAuth();
+            if (!token) return;
+            const id = new URLSearchParams(window.location.search).get('id');
+            if (!id) { window.location.href = '/profiles.html'; return; }
+            const data = await getProfile(id);
+            if (!data?.data) { document.getElementById('profile-card').innerHTML = '<p>Profile not found.</p>'; return; }
+            const p = data.data;
+            document.getElementById('profile-card').innerHTML = `
+                <h2 style="margin-bottom:1.5rem">${p.name}</h2>
+                <div class="detail-grid">
+                    <div class="detail-item"><label>ID</label><span style="font-size:0.8rem;word-break:break-all">${p.id}</span></div>
+                    <div class="detail-item"><label>Gender</label><span class="badge badge-${p.gender}">${p.gender}</span></div>
+                    <div class="detail-item"><label>Gender Probability</label><span>${(p.gender_probability * 100).toFixed(1)}%</span></div>
+                    <div class="detail-item"><label>Age</label><span>${p.age}</span></div>
+                    <div class="detail-item"><label>Age Group</label><span class="badge badge-${p.age_group}">${p.age_group}</span></div>
+                    <div class="detail-item"><label>Country</label><span>${p.country_name} (${p.country_id})</span></div>
+                    <div class="detail-item"><label>Country Probability</label><span>${(p.country_probability * 100).toFixed(1)}%</span></div>
+                    <div class="detail-item"><label>Created At</label><span>${new Date(p.created_at).toLocaleString()}</span></div>
+                </div>`;
+        }
+        loadProfile();
+    </script>
+</body>
+</html>

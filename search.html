@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insighta Labs — Search</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav>
+        <span class="brand">🔍 Insighta Labs</span>
+        <div>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="profiles.html">Profiles</a>
+            <a href="search.html">Search</a>
+            <a href="account.html">Account</a>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </nav>
+    <div class="container">
+        <h1 style="margin-bottom:1.5rem">Natural Language Search</h1>
+        <div class="card">
+            <div class="search-box">
+                <input id="query" placeholder='Try: "young males from nigeria" or "female adults from kenya"'
+                    onkeydown="if(event.key==='Enter') doSearch()">
+                <button onclick="doSearch()">Search</button>
+            </div>
+            <div id="examples" style="margin-bottom:1.5rem">
+                <p style="color:#999;font-size:0.9rem;margin-bottom:0.5rem">Examples:</p>
+                <div style="display:flex;flex-wrap:wrap;gap:0.5rem">
+                    ${['young males from nigeria','females above 30','adult males from kenya',
+                       'senior women','teenagers from ghana'].map(q =>
+                        `<span onclick="document.getElementById('query').value='${q}';doSearch()"
+                            style="background:#e3f2fd;color:#1565c0;padding:0.3rem 0.75rem;
+                            border-radius:20px;cursor:pointer;font-size:0.85rem">${q}</span>`
+                    ).join('')}
+                </div>
+            </div>
+            <div id="results"></div>
+        </div>
+    </div>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        async function doSearch() {
+            const token = await requireAuth();
+            if (!token) return;
+            const q = document.getElementById('query').value.trim();
+            if (!q) return;
+            document.getElementById('results').innerHTML = '<div class="loading">Searching...</div>';
+            const data = await searchProfiles(q);
+            if (!data) return;
+            if (data.status === 'error') {
+                document.getElementById('results').innerHTML = `<div class="error-msg">${data.message}</div>`;
+                return;
+            }
+            if (!data.data.length) {
+                document.getElementById('results').innerHTML = '<p>No results found.</p>';
+                return;
+            }
+            document.getElementById('results').innerHTML = `
+                <p style="color:#666;margin-bottom:1rem">${data.total} results found</p>
+                <table>
+                    <thead><tr><th>Name</th><th>Gender</th><th>Age</th><th>Age Group</th><th>Country</th></tr></thead>
+                    <tbody>${data.data.map(p => `
+                        <tr onclick="window.location='profile-detail.html?id=${p.id}'">
+                            <td>${p.name}</td>
+                            <td><span class="badge badge-${p.gender}">${p.gender}</span></td>
+                            <td>${p.age}</td>
+                            <td><span class="badge badge-${p.age_group}">${p.age_group}</span></td>
+                            <td>${p.country_id}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>`;
+        }
+        requireAuth();
+    </script>
+</body>
+</html>

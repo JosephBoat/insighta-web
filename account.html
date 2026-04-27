@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insighta Labs — Account</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav>
+        <span class="brand">🔍 Insighta Labs</span>
+        <div>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="profiles.html">Profiles</a>
+            <a href="search.html">Search</a>
+            <a href="account.html">Account</a>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </nav>
+    <div class="container">
+        <h1 style="margin-bottom:1.5rem">Account</h1>
+        <div class="card" id="account-card">
+            <div class="loading">Loading...</div>
+        </div>
+    </div>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        async function loadAccount() {
+            const token = await requireAuth();
+            if (!token) return;
+            const data = await getWhoami();
+            if (!data?.data) return;
+            const u = data.data;
+            document.getElementById('account-card').innerHTML = `
+                <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:2rem">
+                    <img src="${u.avatar_url}" alt="avatar"
+                        style="width:80px;height:80px;border-radius:50%;border:3px solid #4fc3f7">
+                    <div>
+                        <h2>@${u.username}</h2>
+                        <p style="color:#666">${u.email || 'No email set'}</p>
+                        <span class="badge" style="background:#e3f2fd;color:#1565c0;margin-top:0.5rem">${u.role}</span>
+                    </div>
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-item"><label>User ID</label><span style="font-size:0.8rem;word-break:break-all">${u.id}</span></div>
+                    <div class="detail-item"><label>Member Since</label><span>${new Date(u.created_at).toLocaleDateString()}</span></div>
+                </div>
+                <div style="margin-top:2rem">
+                    <button onclick="logout()" style="background:#e53e3e;color:white;border:none;padding:0.75rem 1.5rem;border-radius:8px;cursor:pointer;font-size:1rem">
+                        Logout
+                    </button>
+                </div>`;
+        }
+        loadAccount();
+    </script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insighta Labs — Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav>
+        <span class="brand">🔍 Insighta Labs</span>
+        <div>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="profiles.html">Profiles</a>
+            <a href="search.html">Search</a>
+            <a href="account.html">Account</a>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </nav>
+    <div class="container">
+        <h1 style="margin-bottom:1.5rem">Dashboard</h1>
+        <div class="metrics" id="metrics">
+            <div class="metric"><div class="number">...</div><div class="label">Total Profiles</div></div>
+            <div class="metric"><div class="number">...</div><div class="label">Male</div></div>
+            <div class="metric"><div class="number">...</div><div class="label">Female</div></div>
+            <div class="metric"><div class="number">...</div><div class="label">Adults</div></div>
+        </div>
+        <div class="card">
+            <h2>Recent Profiles</h2>
+            <div id="recent-profiles"><div class="loading">Loading...</div></div>
+        </div>
+    </div>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        async function loadDashboard() {
+            const token = await requireAuth();
+            if (!token) return;
+
+            const [all, male, female, adults] = await Promise.all([
+                getProfiles({ limit: 1 }),
+                getProfiles({ gender: 'male', limit: 1 }),
+                getProfiles({ gender: 'female', limit: 1 }),
+                getProfiles({ age_group: 'adult', limit: 1 }),
+            ]);
+
+            const metrics = document.getElementById('metrics');
+            metrics.innerHTML = `
+                <div class="metric"><div class="number">${all?.total || 0}</div><div class="label">Total Profiles</div></div>
+                <div class="metric"><div class="number">${male?.total || 0}</div><div class="label">Male</div></div>
+                <div class="metric"><div class="number">${female?.total || 0}</div><div class="label">Female</div></div>
+                <div class="metric"><div class="number">${adults?.total || 0}</div><div class="label">Adults</div></div>
+            `;
+
+            const recent = await getProfiles({ limit: 5, sort_by: 'created_at', order: 'desc' });
+            const container = document.getElementById('recent-profiles');
+            if (!recent?.data?.length) { container.innerHTML = '<p>No profiles found.</p>'; return; }
+
+            container.innerHTML = `
+                <table>
+                    <thead><tr><th>Name</th><th>Gender</th><th>Age</th><th>Country</th></tr></thead>
+                    <tbody>${recent.data.map(p => `
+                        <tr onclick="window.location='profile-detail.html?id=${p.id}'">
+                            <td>${p.name}</td>
+                            <td><span class="badge badge-${p.gender}">${p.gender}</span></td>
+                            <td>${p.age}</td>
+                            <td>${p.country_id}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>`;
+        }
+        loadDashboard();
+    </script>
+</body>
+</html>

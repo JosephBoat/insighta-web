@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insighta Labs — Profiles</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav>
+        <span class="brand">🔍 Insighta Labs</span>
+        <div>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="profiles.html">Profiles</a>
+            <a href="search.html">Search</a>
+            <a href="account.html">Account</a>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </nav>
+    <div class="container">
+        <h1 style="margin-bottom:1.5rem">Profiles</h1>
+        <div class="card">
+            <div class="filters">
+                <select id="gender-filter">
+                    <option value="">All Genders</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                </select>
+                <select id="age-group-filter">
+                    <option value="">All Age Groups</option>
+                    <option value="child">Child</option>
+                    <option value="teenager">Teenager</option>
+                    <option value="adult">Adult</option>
+                    <option value="senior">Senior</option>
+                </select>
+                <input id="country-filter" placeholder="Country ID (e.g. NG)" maxlength="2">
+                <input id="min-age" type="number" placeholder="Min age" style="width:100px">
+                <input id="max-age" type="number" placeholder="Max age" style="width:100px">
+                <select id="sort-by">
+                    <option value="created_at">Sort: Date</option>
+                    <option value="age">Sort: Age</option>
+                    <option value="gender_probability">Sort: Probability</option>
+                </select>
+                <select id="order">
+                    <option value="asc">Asc</option>
+                    <option value="desc">Desc</option>
+                </select>
+                <button onclick="loadProfiles(1)">Apply</button>
+            </div>
+            <div id="profiles-table"><div class="loading">Loading...</div></div>
+            <div class="pagination">
+                <button id="prev-btn" onclick="changePage(-1)" disabled>← Prev</button>
+                <span class="page-info" id="page-info"></span>
+                <button id="next-btn" onclick="changePage(1)">Next →</button>
+            </div>
+        </div>
+    </div>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        let currentPage = 1;
+
+        async function loadProfiles(page = 1) {
+            currentPage = page;
+            const token = await requireAuth();
+            if (!token) return;
+
+            document.getElementById('profiles-table').innerHTML = '<div class="loading">Loading...</div>';
+
+            const params = { page, limit: 10 };
+            const gender = document.getElementById('gender-filter').value;
+            const ageGroup = document.getElementById('age-group-filter').value;
+            const country = document.getElementById('country-filter').value;
+            const minAge = document.getElementById('min-age').value;
+            const maxAge = document.getElementById('max-age').value;
+            const sortBy = document.getElementById('sort-by').value;
+            const order = document.getElementById('order').value;
+
+            if (gender) params.gender = gender;
+            if (ageGroup) params.age_group = ageGroup;
+            if (country) params.country_id = country.toUpperCase();
+            if (minAge) params.min_age = minAge;
+            if (maxAge) params.max_age = maxAge;
+            if (sortBy) params.sort_by = sortBy;
+            if (order) params.order = order;
+
+            const data = await getProfiles(params);
+            if (!data) return;
+
+            document.getElementById('page-info').textContent = `Page ${data.page} of ${data.total_pages} (${data.total} total)`;
+            document.getElementById('prev-btn').disabled = page <= 1;
+            document.getElementById('next-btn').disabled = page >= data.total_pages;
+
+            if (!data.data.length) {
+                document.getElementById('profiles-table').innerHTML = '<p style="padding:1rem">No profiles found.</p>';
+                return;
+            }
+
+            document.getElementById('profiles-table').innerHTML = `
+                <table>
+                    <thead><tr><th>Name</th><th>Gender</th><th>Age</th><th>Age Group</th><th>Country</th></tr></thead>
+                    <tbody>${data.data.map(p => `
+                        <tr onclick="window.location='profile-detail.html?id=${p.id}'">
+                            <td>${p.name}</td>
+                            <td><span class="badge badge-${p.gender}">${p.gender}</span></td>
+                            <td>${p.age}</td>
+                            <td><span class="badge badge-${p.age_group}">${p.age_group}</span></td>
+                            <td>${p.country_id}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        function changePage(dir) { loadProfiles(currentPage + dir); }
+        loadProfiles();
+    </script>
+</body>
+</html>

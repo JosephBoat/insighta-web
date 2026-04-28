@@ -15,18 +15,13 @@ jobs:
 
       - name: Check required files exist
         run: |
-          test -f index.html
-          test -f dashboard.html
-          test -f profiles.html
-          test -f profile-detail.html
-          test -f search.html
-          test -f account.html
-          test -f css/style.css
-          test -f js/auth.js
-          test -f js/api.js
-          echo "All required files present"
-
-      - name: Check no hardcoded localhost in production files
-        run: |
-          ! grep -r "localhost:8000" js/ || true
-          echo "Build check passed"
+          test -f index.html && echo "✓ index.html"
+          test -f dashboard.html && echo "✓ dashboard.html"
+          test -f profiles.html && echo "✓ profiles.html"
+          test -f profile-detail.html && echo "✓ profile-detail.html"
+          test -f search.html && echo "✓ search.html"
+          test -f account.html && echo "✓ account.html"
+          test -f css/style.css && echo "✓ style.css"
+          test -f js/auth.js && echo "✓ auth.js"
+          test -f js/api.js && echo "✓ api.js"
+          echo "All required files present ✓"

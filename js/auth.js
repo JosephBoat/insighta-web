@@ -1,31 +1,31 @@
 const API_URL = 'https://hng-stage1-profiles.fly.dev';
 
-// Store tokens in memory (not localStorage — security)
-// HTTP-only cookies are set by the backend
-let accessToken = sessionStorage.getItem('access_token');
-let refreshToken = sessionStorage.getItem('refresh_token');
-
 function saveTokens(access, refresh) {
-    accessToken = access;
-    refreshToken = refresh;
     sessionStorage.setItem('access_token', access);
     sessionStorage.setItem('refresh_token', refresh);
 }
 
 function clearTokens() {
-    accessToken = null;
-    refreshToken = null;
     sessionStorage.removeItem('access_token');
     sessionStorage.removeItem('refresh_token');
 }
 
+function getStoredToken() {
+    return sessionStorage.getItem('access_token');
+}
+
+function getStoredRefresh() {
+    return sessionStorage.getItem('refresh_token');
+}
+
 async function refreshAccessToken() {
-    if (!refreshToken) return false;
+    const refresh = getStoredRefresh();
+    if (!refresh) return false;
     try {
         const response = await fetch(`${API_URL}/auth/refresh`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refresh_token: refreshToken }),
+            body: JSON.stringify({ refresh_token: refresh }),
         });
         if (!response.ok) return false;
         const data = await response.json();
@@ -37,23 +37,32 @@ async function refreshAccessToken() {
 }
 
 async function getValidToken() {
-    if (!accessToken) return null;
+    const token = getStoredToken();
+    if (!token) return null;
 
-    // Test if current token works
-    const response = await fetch(`${API_URL}/auth/whoami`, {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
-
-    if (response.ok) return accessToken;
+    // Try to use it directly — if it fails, refresh
+    try {
+        const response = await fetch(`${API_URL}/auth/whoami`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) return token;
+    } catch {}
 
     // Try refresh
     const refreshed = await refreshAccessToken();
-    return refreshed ? accessToken : null;
+    return refreshed ? getStoredToken() : null;
 }
 
 async function requireAuth() {
+    // If no tokens at all, go to login immediately
+    if (!getStoredToken() && !getStoredRefresh()) {
+        window.location.href = '/insighta-web/index.html';
+        return null;
+    }
+
     const token = await getValidToken();
     if (!token) {
+        clearTokens();
         window.location.href = '/insighta-web/index.html';
         return null;
     }
@@ -61,25 +70,24 @@ async function requireAuth() {
 }
 
 async function logout() {
+    const refresh = getStoredRefresh();
     try {
         await fetch(`${API_URL}/auth/logout`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refresh_token: refreshToken }),
+            body: JSON.stringify({ refresh_token: refresh }),
         });
     } catch {}
     clearTokens();
     window.location.href = '/insighta-web/index.html';
 }
 
-// Handle OAuth callback — extract tokens from URL
 function handleCallback() {
     const params = new URLSearchParams(window.location.search);
     const access = params.get('access_token');
     const refresh = params.get('refresh_token');
     if (access && refresh) {
         saveTokens(access, refresh);
-        // Clean URL then redirect to dashboard
         window.history.replaceState({}, document.title, window.location.pathname);
         window.location.href = '/insighta-web/dashboard.html';
     }

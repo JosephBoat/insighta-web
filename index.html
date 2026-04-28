@@ -21,12 +21,16 @@
     </div>
     <script src="js/auth.js"></script>
     <script>
-        // If already logged in, redirect to dashboard
-        if (sessionStorage.getItem('access_token')) {
+        // Handle callback first (tokens in URL from OAuth redirect)
+        handleCallback();
+        
+        // Only redirect if we have BOTH tokens stored
+        // Don't make network call here — just check storage
+        const hasToken = sessionStorage.getItem('access_token');
+        const hasRefresh = sessionStorage.getItem('refresh_token');
+        if (hasToken && hasRefresh) {
             window.location.href = '/insighta-web/dashboard.html';
         }
-        // Handle callback if tokens in URL
-        handleCallback();
     </script>
 </body>
 </html>

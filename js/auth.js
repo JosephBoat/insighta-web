@@ -81,6 +81,6 @@ function handleCallback() {
         saveTokens(access, refresh);
         // Clean URL then redirect to dashboard
         window.history.replaceState({}, document.title, window.location.pathname);
-        window.location.href = 'dashboard.html';
+        window.location.href = '/insighta-web/dashboard.html';
     }
 }

@@ -54,7 +54,7 @@ async function getValidToken() {
 async function requireAuth() {
     const token = await getValidToken();
     if (!token) {
-        window.location.href = '/index.html';
+        window.location.href = '/insighta-web/index.html';
         return null;
     }
     return token;
@@ -69,7 +69,7 @@ async function logout() {
         });
     } catch {}
     clearTokens();
-    window.location.href = '/index.html';
+    window.location.href = '/insighta-web/index.html';
 }
 
 // Handle OAuth callback — extract tokens from URL

@@ -4,7 +4,7 @@ const API_HEADERS = { 'X-API-Version': '1' };
 async function apiFetch(path, options = {}) {
     const token = await getValidToken();
     if (!token) {
-        window.location.href = '/index.html';
+        window.location.href = '/insighta-web/index.html';
         return null;
     }
 
@@ -17,7 +17,7 @@ async function apiFetch(path, options = {}) {
 
     const response = await fetch(`${BASE}${path}`, { ...options, headers });
     if (response.status === 401) {
-        window.location.href = '/index.html';
+        window.location.href = '/insighta-web/index.html';
         return null;
     }
     return response;

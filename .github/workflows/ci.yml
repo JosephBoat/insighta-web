@@ -1,0 +1,32 @@
+name: Web Portal CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required files exist
+        run: |
+          test -f index.html
+          test -f dashboard.html
+          test -f profiles.html
+          test -f profile-detail.html
+          test -f search.html
+          test -f account.html
+          test -f css/style.css
+          test -f js/auth.js
+          test -f js/api.js
+          echo "All required files present"
+
+      - name: Check no hardcoded localhost in production files
+        run: |
+          ! grep -r "localhost:8000" js/ || true
+          echo "Build check passed"

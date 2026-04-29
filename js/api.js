@@ -10,12 +10,19 @@ async function apiFetch(path, options = {}) {
 
     const headers = {
         ...API_HEADERS,
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
+        ...csrfHeaders(),
         ...(options.headers || {}),
     };
+    if (token !== 'cookie') {
+        headers.Authorization = `Bearer ${token}`;
+    }
 
-    const response = await fetch(`${BASE}${path}`, { ...options, headers });
+    const response = await fetch(`${BASE}${path}`, {
+        ...options,
+        credentials: 'include',
+        headers,
+    });
     if (response.status === 401) {
         window.location.href = '/insighta-web/index.html';
         return null;
@@ -43,8 +50,10 @@ async function searchProfiles(q, params = {}) {
 async function getWhoami() {
     const token = await getValidToken();
     if (!token) return null;
+    const headers = token === 'cookie' ? {} : { 'Authorization': `Bearer ${token}` };
     const response = await fetch(`${BASE}/auth/whoami`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
+        headers,
     });
     return response.ok ? response.json() : null;
 }

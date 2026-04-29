@@ -18,18 +18,38 @@ function getStoredRefresh() {
     return sessionStorage.getItem('refresh_token');
 }
 
+function getCookie(name) {
+    return document.cookie
+        .split('; ')
+        .find((row) => row.startsWith(`${name}=`))
+        ?.split('=')[1] || null;
+}
+
+function csrfHeaders() {
+    const csrf = getCookie('csrf_token');
+    return csrf ? { 'X-CSRF-Token': csrf } : {};
+}
+
 async function refreshAccessToken() {
     const refresh = getStoredRefresh();
-    if (!refresh) return false;
     try {
-        const response = await fetch(`${API_URL}/auth/refresh`, {
+        const options = {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refresh_token: refresh }),
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+        };
+        if (refresh) {
+            options.body = JSON.stringify({ refresh_token: refresh });
+        }
+
+        const response = await fetch(`${API_URL}/auth/refresh`, {
+            ...options,
         });
         if (!response.ok) return false;
         const data = await response.json();
-        saveTokens(data.access_token, data.refresh_token);
+        if (refresh && data.access_token && data.refresh_token) {
+            saveTokens(data.access_token, data.refresh_token);
+        }
         return true;
     } catch {
         return false;
@@ -38,28 +58,31 @@ async function refreshAccessToken() {
 
 async function getValidToken() {
     const token = getStoredToken();
-    if (!token) return null;
-
     // Try to use it directly — if it fails, refresh
+    if (token) {
+        try {
+            const response = await fetch(`${API_URL}/auth/whoami`, {
+                credentials: 'include',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) return token;
+        } catch {}
+    }
+
     try {
         const response = await fetch(`${API_URL}/auth/whoami`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            credentials: 'include',
         });
-        if (response.ok) return token;
+        if (response.ok) return 'cookie';
     } catch {}
 
     // Try refresh
+    if (!getStoredRefresh() && !getCookie('csrf_token')) return null;
     const refreshed = await refreshAccessToken();
-    return refreshed ? getStoredToken() : null;
+    return refreshed ? (getStoredToken() || 'cookie') : null;
 }
 
 async function requireAuth() {
-    // If no tokens at all, go to login immediately
-    if (!getStoredToken() && !getStoredRefresh()) {
-        window.location.href = '/insighta-web/index.html';
-        return null;
-    }
-
     const token = await getValidToken();
     if (!token) {
         clearTokens();
@@ -72,10 +95,16 @@ async function requireAuth() {
 async function logout() {
     const refresh = getStoredRefresh();
     try {
-        await fetch(`${API_URL}/auth/logout`, {
+        const options = {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refresh_token: refresh }),
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+        };
+        if (refresh) {
+            options.body = JSON.stringify({ refresh_token: refresh });
+        }
+        await fetch(`${API_URL}/auth/logout`, {
+            ...options,
         });
     } catch {}
     clearTokens();

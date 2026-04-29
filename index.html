@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Insighta Labs — Login</title>
+    <title>Insighta Labs - Login</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="login-page">
         <div class="login-card">
-            <h1>🔍 Insighta Labs</h1>
+            <h1>Insighta Labs</h1>
             <p>Profile Intelligence Platform</p>
             <a href="https://hng-stage1-profiles.fly.dev/auth/github" class="github-btn">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
@@ -21,16 +21,13 @@
     </div>
     <script src="js/auth.js"></script>
     <script>
-        // Handle callback first (tokens in URL from OAuth redirect)
-        handleCallback();
-        
-        // Only redirect if we have BOTH tokens stored
-        // Don't make network call here — just check storage
-        const hasToken = sessionStorage.getItem('access_token');
-        const hasRefresh = sessionStorage.getItem('refresh_token');
-        if (hasToken && hasRefresh) {
-            window.location.href = '/insighta-web/dashboard.html';
-        }
+        (async () => {
+            handleCallback();
+            const token = await getValidToken();
+            if (token) {
+                window.location.href = '/insighta-web/dashboard.html';
+            }
+        })();
     </script>
 </body>
 </html>
